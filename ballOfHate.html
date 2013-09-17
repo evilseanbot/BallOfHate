@@ -1,0 +1,269 @@
+<html>
+	<link href="css/black-tie/jquery-ui-1.10.3.custom.css" rel="stylesheet">
+	<link href="css/ballOfHate.css" rel="stylesheet">	
+    <link rel="SHORTCUT ICON" HREF="favicon.ico">	
+	<script src="js/jquery-1.9.1.js"></script>
+	<script src="js/jquery-ui-1.10.3.custom.js"></script>
+    <script>
+	function updateDisplay(parties) {
+	    if (parties[0].length == 0) {
+		   var anyEntries = false;
+		} else {
+		   var anyEntries = true;
+		}
+		
+		onlyOnePerson = false;
+		
+		if (parties.length == 1) {
+		    if (parties[0].length == 1) {
+			    onlyOnePerson = true;
+			}
+		 var dramaFree = true;
+		} else {
+		 var dramaFree = false;
+		}
+
+		var displayHTML = "<div id='groups' class='fadingIn'>"
+		if (!anyEntries) {
+            displayHTML += "<h3>Select multiple friends.</h3>"
+		} else if (onlyOnePerson) {
+            displayHTML += "<h3>Select more than one friend.</h3>"		
+		} else {
+			if (!dramaFree) {
+			  displayHTML += "<h3>There might be some tension there!</h3>";
+			  displayHTML += "<h1>SUGGESTED DRAMA FREE GROUPS</h1>";				  
+			} else {
+			  displayHTML += "<h3>These guys are totally chill!</h3>";
+			  }
+			displayHTML += "<div class='container'>";
+			for (var i = 0; i < parties.length; i++) {
+			  displayHTML += "<div class='suggestedGroup'>";
+			  displayHTML += "<h3>" + teamNames[Math.floor((Math.random()*teamNames.length))] + "</h3>";
+			  for (var j = 0; j < parties[i].length; j++) {
+				  displayHTML += "<img src='http://graph.facebook.com/"+parties[i][j]+"/picture' id='img" + parties[i][j] + "' >" + fids_to_names[parties[i][j]] + "<br>";
+			  }
+			  displayHTML += "</div>";
+			}
+		}
+		displayHTML += "</div></div>";
+		$("#displayParties").html(displayHTML);	
+	}
+	
+	function clearPartyInput() {
+		$("#partyInputBlock").html("<input class='person' id='partier0' name='partier0' /><input type='hidden' id='partier0fid' name='partier0fid' />");
+		$("#numofpartiers").val(1);
+		$("#partier0").on("autocompleteselect", function(e, ui) {
+			addPartierInput();
+		});
+
+		$("#partier0").on("autocompletechange", function(e, ui) {
+			$("#partier0fid").val(friends_names_to_fids[$("#partier0").val()]);
+		});		
+		
+		$("#partier0").autocomplete({
+			source: friendsNames
+		});					 			
+		partier_index = 0;
+	
+	}
+	
+	function addPartierInput() {
+		$("#partier"+partier_index).after("<br><input class='person' id='partier" + (partier_index+1) +"' name='partier" + (partier_index+1) + "' />");
+		$("#partier"+partier_index).after("<input type='hidden' id='partier" + (partier_index+1) +"fid' name='partier" + (partier_index+1) + "fid' />");
+		
+		partier_index = partier_index + 1;
+
+		$("#partier"+(partier_index-1)).unbind("autocompleteselect");
+
+		$("#partier"+(partier_index-1)).on("autocompleteselect", function(e, ui) {
+		    var selectedName = ui.item.value;
+			$("#" + this.id + "fid").val(selectedName);			
+		});
+		
+		
+		$("#partier"+partier_index).on("autocompleteselect", function(e, ui) {
+		    var selectedName = ui.item.value;
+			$("#" + this.id + "fid").val(friends_names_to_fids[selectedName]);			
+			addPartierInput();
+		});
+		
+		//$("#partier"+partier_index).on("autocompletechange", function(e, ui) {
+		//	$("#" + this.id + "fid").val(friends_names_to_fids[$("#" + this.id).val()]);
+		//});
+		
+		//$("#partier"+partier_index).focus();
+
+		$("#numofpartiers").val(partier_index+1);
+		$("#partier"+partier_index).autocomplete({
+			source: friendsNames
+		});		
+		
+		
+	}
+	
+	var updateStatusCallback = 0;
+	var partier_index = 0;
+	var friendsNames = [];
+	var friends_names_to_fids = {};
+	var fids_to_names = {};
+	var user_fid = 0;
+	var friendsACList = [];
+	
+		var teamNames = ["Team clownpants",
+		                 "Team huggybear",
+						 "Team snuggle",
+						 "Team pteranodon",
+						 "Team blabbermouth",
+						 "Team murder",
+						 "Team tuxedo",
+						 "Team handlebar",
+						 "Team tesla",
+						 "Team porkmind",
+						 "Team mopeylump",
+						 "Team moonpeople",
+						 "Team scifighter",
+						 "Team lovebug",
+						 "Team cattlepro",
+						 "Team monkeymind"];
+	
+	$(document).ready(function() {
+		$(".action").button();
+		
+		$("#tabs").tabs();
+		
+		$("#reportHate").click(function() {
+			$.ajax({
+			  url: "reportDislike.py",
+			  context: document.body,
+			  data: {disliker_fid: $("#disliker_fid").val(), disliked_fid: $("#disliked_fid").val(), user_fid: $("#user_fid").val()}
+			}).done(function() {
+			  $(this).addClass("done");
+			});								
+			$("#reportStatus").html("<span id='reportMessage' class='fadingIn'>Your report updated the database! Thank you for helping people avoid drama.</span>")
+			$("#disliker").val("")
+			$("#disliked").val("")			
+		});
+		
+		$("#checkConflicts").click(function() {
+		    ajaxData = {numofpartiers: $("#numofpartiers").val(), checkConflicts: true};
+		    for (var i = 0; i <= partier_index; i++) {
+			    ajaxData["partier"+i+"fid"] = $("#partier" + i + "fid").val();
+			}
+		
+		    $("#displayParties").html("Thinking about this..")
+			
+			$.ajax({
+			  url: "getFriendlyGroupsHTML.py",
+			  context: document.body,
+			  data: ajaxData
+			}).done(function(data) {
+			  $(this).addClass("done");
+			  parties = $.parseJSON(data);
+			  
+			  updateDisplay(parties);
+			  clearPartyInput();
+
+			});								
+        });
+								 		
+		$("#add_person").click(function() {
+		    addPartierInput()				 			
+		});
+		
+        $.ajaxSetup({ cache: true });
+        $.getScript('//connect.facebook.net/en_UK/all.js', function(){
+			FB.init({
+				appId: '56606425618',
+				xfbml: true
+				//channelUrl: '//yourapp.com/channel.html',
+			});     
+			$('#loginbutton,#feedbutton').removeAttr('disabled');
+			FB.getLoginStatus(updateStatusCallback);
+			
+		FB.login(function(response) {
+		   if (response.authResponse) {
+			 console.log('Welcome!  Fetching your information.... ');
+			 FB.api('/me', function(response) {
+			     $(".yourname").html(response.name);
+				 user_fid = response.id;
+				 $("#user_fid").val(user_fid);
+			 });
+			 
+			 FB.api('me/friends', function(response) {
+                 var friends = response;				 
+				 for (var i = 0; i < friends.data.length; i++) {
+					 friendsNames.push(friends.data[i].name);
+					 friends_names_to_fids[friends.data[i].name] = friends.data[i].id;
+					 fids_to_names[friends.data[i].id] = friends.data[i].name;
+					 					 
+				 }
+
+				 $( ".person" ).autocomplete({
+					 source: friendsNames
+				 });					  				 
+				 
+				$("#disliker").on("autocompletechange", function(e, ui) {
+					$("#disliker_fid").val(friends_names_to_fids[$("#disliker").val()]);
+				});
+
+				$("#disliked").on("autocompletechange", function(e, ui) {
+					$("#disliked_fid").val(friends_names_to_fids[$("#disliked").val()]);
+				});
+				
+				$("#partier0").on("autocompleteselect", function(e, ui) {
+					var selectedName = ui.item.value;
+					$("#" + this.id + "fid").val(friends_names_to_fids[selectedName]);			
+					addPartierInput();
+				});
+
+				//$("#partier0").on("autocompletechange", function(e, ui) {
+				//	$("#partier0fid").val(friends_names_to_fids[$("#partier0").val()]);
+				//});
+				
+				
+             });
+			 
+		   } else {
+			 console.log('User cancelled login or did not fully authorize.');
+		   }
+		 });
+        });		
+		
+	});		
+	</script>
+<body>
+<h3>Welcome, <span class='yourname'></span></h3>
+<div id="tabs">
+    <ul>
+	    <li><a href="#tabs-1">Plan a drama-free party</a></li>
+		<li><a href="#tabs-2">Tell us who dislikes each other</a></li>
+	</ul>
+	<div id="tabs-1">
+	    <p>Enter any number of your friends and see if there's a personal conflict in the group.</p>	
+		<div id="fb-root"></div>
+		<span id="partyInputBlock">
+			<input class='person' id='partier0' name='partier0' />
+			<input type='hidden' id='partier0fid' name='partier0fid' />
+		</span>
+		<input type='hidden' id='numofpartiers' name='numofpartiers' value='1'/>
+		<span id='insert_new_party_people'></span>
+		<br><br>
+		<input type='submit' value='See if party would be drama-free' name='checkConflicts' id='checkConflicts' class='action'/>
+        <div id='displayParties'></div>
+	</div>
+    <div id="tabs-2">
+	    <p>Reporting personality conflicts is anonymous. Your name will not be displayed to users as a result of any reports.</p>
+		<input class='person' id='disliker' type='text'/> 
+		<input type='hidden' id='disliker_fid' name='disliker_fid' />
+		Doesn't Like 
+		<input class='person' id='disliked'/>
+		<input type='hidden' id='disliked_fid' name='disliked_fid'/>
+		<input type='hidden' id='user_fid' name='user_fid' />
+		<input type='submit' value='Let us know' name='reportHate' class='action' id='reportHate'>
+		<div id='reportStatus'></div>
+	</div>
+</div>
+<br><br>
+<div class="fb-like" data-send="true" data-width="450" data-show-faces="true"></div>
+</body>
+</html>
