@@ -1,5 +1,0 @@
-Find friendly group optimization ideas:
-
-* It appears to run On^2, where x in unknown, and N = the number of sets of mutually exclusive pairs of clashing friends.
-   
-   

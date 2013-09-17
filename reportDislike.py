@@ -13,7 +13,7 @@ if "user_fid" in form:
             user = str(long(form["user_fid"].value))
             disliker = str(long(form["disliker_fid"].value))
             disliked = str(long(form["disliked_fid"].value))
-            con = _mysql.connect('transfixed.db', 'evilseanbot', 'sqlisforsuckers', 'ballofhate')
+            con = _mysql.connect('name of db', 'username', 'password', 'table')
             query = "INSERT INTO dislikes VALUES ('', " + disliker+ ", " + disliked + ", " + user + ")"
             con.query(query)
             con.use_result()

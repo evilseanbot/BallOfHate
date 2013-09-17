@@ -6,7 +6,7 @@ import MySQLdb as mdb
 
 def getEnemiesFromSQL():
     enemies = []
-    con = mdb.connect('transfixed.db', 'evilseanbot', 'sqlisforsuckers', 'ballofhate')
+    con = mdb.connect('name of database', 'username', 'sql password', 'name of table')
     cur = con.cursor()
     cur.execute("SELECT * FROM dislikes")
     row = cur.fetchone()

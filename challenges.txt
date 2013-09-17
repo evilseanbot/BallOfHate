@@ -1,3 +1,0 @@
-* As a social application, the application's value is highly dependent on its network.
-* The application is not of very much use right now because it has few users at all.
-
